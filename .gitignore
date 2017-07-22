@@ -140,3 +140,4 @@ ENV/
 .ropeproject
 
 .DS_Store
+.idea
