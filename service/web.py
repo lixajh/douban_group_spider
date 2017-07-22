@@ -47,6 +47,7 @@ class MyWebService(WebService):
         for toppic in self.toppics_for_group[group_name]:
             #过滤掉不同豆瓣组的同一贴子（一般标题和内容完全相同）
             if toppic.title in self.all_toppic_titles:
+                logging.info("ignore duplicated toppic: %s", repr(toppic.__dict__))
                 continue
             else:
                 self.all_toppics[toppic.toppic_id] = toppic
