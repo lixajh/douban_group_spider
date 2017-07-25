@@ -90,6 +90,8 @@ class DoubanGroupSpider(threading.Thread):
         super(DoubanGroupSpider, self).__init__()
 
         self.group = group
+        self.score_min = int(config.get("score_min", section='Spider'))
+        self.data_days = int(config.get('data_days', section='Spider'))
         self.account = config.get("account")
         self.password = config.get("password")
         self.data_file = data_file_path(group)
@@ -167,7 +169,11 @@ class DoubanGroupSpider(threading.Thread):
                 time.sleep(random.randint(8, 12))
 
         self.all_toppics = sorted(self.all_toppics, key=lambda info: info.time, reverse=True)
-        if len(self.all_toppics) > 0:
+        if len(self.all_toppics) > self.score_min:
+            self.all_toppics = list(
+                filter(lambda tp: tp.time > (datetime.datetime.now() - datetime.timedelta(days=self.data_days)),
+                       self.all_toppics))
+
             save_data_file(self.all_toppics, self.data_file)
         if min_time:
             self.min_time = min_time
