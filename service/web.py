@@ -1,4 +1,3 @@
-import datetime
 import os.path
 import sys
 
@@ -6,6 +5,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 import logging
 
 from watchdog.events import FileSystemEvent
+from crawler.spider import filter_toppics, calulate_score
 
 from base.log import init_logging
 from base.modules import Toppic
@@ -20,9 +20,10 @@ class MyWebService(WebService):
     def __init__(self):
         super(MyWebService, self).__init__()
 
+        self.filterKeywordsAndScores = self.config.get_keywords('keywords')
+
         self.toppics_for_group = {}
         self.all_toppics = {}
-        self.all_toppic_titles = set()
         self.sorted_toppics_list = []
 
         self.data_dir = data_dir_path()
@@ -45,16 +46,11 @@ class MyWebService(WebService):
 
         logging.info("load data file: %s", event.src_path)
         self.toppics_for_group[group_name] = load_data_file(event.src_path)
-        for toppic in self.toppics_for_group[group_name]:
-            #过滤掉不同豆瓣组的同一贴子（一般标题和内容完全相同）
-            if toppic.title in self.all_toppic_titles:
-                logging.info("ignore duplicated toppic: %s", repr(toppic.__dict__))
-                continue
-            else:
-                self.all_toppics[toppic.toppic_id] = toppic
-                self.all_toppic_titles.add(toppic.title)
 
-        self.sorted_toppics_list = sorted(self.all_toppics.values(), key=lambda toppic: toppic.time, reverse=True)
+        for toppic in self.toppics_for_group[group_name]:
+            self.all_toppics[toppic.toppic_id] = toppic
+
+        self.sorted_toppics_list = filter_toppics(self.all_toppics.values(), self.config, True)
 
     async def index(self, request):
         return web.Response(body=b'Hello, home page!')
@@ -73,7 +69,7 @@ class MyWebService(WebService):
 				</li>
 		'''
 
-        l = [item_html.format(group_name='[%s]' % (toppic.group_name),
+        l = [item_html.format(group_name='[%s](%d)' % (toppic.group_name, toppic.score),
                               title="%s" % (toppic.title),
                               time=toppic.time.strftime(Toppic.TIME_SIMPLE_FORMAT),
                               link=toppic.link)

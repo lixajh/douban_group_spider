@@ -11,25 +11,14 @@ import mechanicalsoup
 import requests
 from bs4 import BeautifulSoup
 
+from base.configparse import ConfigFile
 from base.modules import DoubanGroup, Toppic
 from base.serializer import load_data_file, save_data_file, data_file_path
 
 PROJECT_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
-def calulate_score(keywords: [str], expectedKeywords):
-    s = set(keywords)
-    Keywords = set(expectedKeywords.keys())
-
-    selectedKeywords = Keywords.intersection(s)
-    score = 0
-    for key in selectedKeywords:
-        score += expectedKeywords[key]
-
-    return score
-
-
-def parse_douban_group(text: str, min_time: datetime.datetime, keywordsWithCores: dict, check_func) -> (str, [Toppic]):
+def parse_douban_group(text: str, min_time: datetime.datetime, check_func) -> (str, [Toppic]):
     toppics = []
 
     soup = BeautifulSoup(text, "html.parser")
@@ -58,19 +47,12 @@ def parse_douban_group(text: str, min_time: datetime.datetime, keywordsWithCores
             timestr = tr.select_one('td.time').text
             obj.time = datetime.datetime.strptime(timestr, "%m-%d %H:%M").replace(year=2017)
 
-            l = list((jieba.cut_for_search(obj.title)))
-            score = calulate_score(l, keywordsWithCores)
-            obj.score = score
-
             check_func(obj)
             all_count += 1
 
             if obj.time < min_time:
                 out_of_date_count += 1
                 continue
-
-            if score > 0:
-                toppics.append(obj)
 
         except AttributeError as ex:
             logging.error("Skip %s: %s" % (tr, ex))
@@ -90,14 +72,16 @@ class DoubanGroupSpider(threading.Thread):
         super(DoubanGroupSpider, self).__init__()
 
         self.group = group
-        self.score_min = int(config.get("score_min", section='Spider'))
-        self.data_days = int(config.get('data_days', section='Spider'))
+        self.config = config
+
         self.account = config.get("account")
         self.password = config.get("password")
+
         self.data_file = data_file_path(group)
+
         self.all_toppics = load_data_file(self.data_file)
         self.all_toppics_id = set([info.toppic_id for info in self.all_toppics])
-        self.filterKeywordsAndScores = config.get_keywords('keywords')
+
         self.init_crawl_hours_ago = int(config.get('hours_ago', section='Spider'))
 
         self.load_runtime_data()
@@ -156,26 +140,65 @@ class DoubanGroupSpider(threading.Thread):
                 elif m > min_time:
                     min_time = m
 
-            next_link, toppics = parse_douban_group(page_text, self.min_time, self.filterKeywordsAndScores, check_func)
+                    obj.group_name = self.group.name
+
+            next_link, toppics = parse_douban_group(page_text, self.min_time, check_func)
 
             for tp in toppics:
-                tp.group_name = self.group.name
-
-                if tp.toppic_id not in self.all_toppics_id:
-                    self.all_toppics.extend(toppics)
-                    self.all_toppics_id.add(tp.toppic_id)
+                self.all_toppics.extend(toppics)
+                self.all_toppics_id.add(tp.toppic_id)
 
             if next_link:
                 time.sleep(random.randint(8, 12))
 
-        self.all_toppics = sorted(self.all_toppics, key=lambda info: info.time, reverse=True)
-        if len(self.all_toppics) > self.score_min:
-            self.all_toppics = list(
-                filter(lambda tp: tp.time > (datetime.datetime.now() - datetime.timedelta(days=self.data_days)),
-                       self.all_toppics))
+        self.all_toppics = filter_toppics(self.all_toppics, self.config)
+        save_data_file(self.all_toppics, self.data_file)
 
-            save_data_file(self.all_toppics, self.data_file)
         if min_time:
             self.min_time = min_time
-
         self.save_runtime_data()
+
+
+def filter_toppics(tps: [Toppic], config: ConfigFile, recale_score=False) -> [Toppic]:
+    filterKeywordsAndScores = config.get_keywords('keywords')
+
+    for tp in tps:
+        if tp.score is None or recale_score:
+            tp.score = calulate_score(tp.title, filterKeywordsAndScores)
+
+    tps = sorted(tps, key=lambda tp: tp.time, reverse=True)
+
+    all_toppics_id = set()
+    all_toppic_titles = set()
+    all_toppics = []
+
+    for tp in tps:
+        if tp.toppic_id not in all_toppics_id and tp.title not in all_toppic_titles:
+            all_toppics.append(tp)
+
+        all_toppics_id.add(tp.toppic_id)
+        all_toppic_titles.add(tp.title)
+
+    score_min = int(config.get("score_min", section='Spider'))
+    data_days = int(config.get('data_days', section='Spider'))
+
+    def f(tp: Toppic) -> bool:
+        return (tp.time > (datetime.datetime.now() - datetime.timedelta(days=data_days)) and tp.score >= score_min)
+
+    if len(all_toppics) > 0:
+        all_toppics = list(filter(f, all_toppics))
+
+    return all_toppics
+
+
+def calulate_score(title: str, expectedKeywords):
+    keywords = list((jieba.cut_for_search(title)))
+    s = set(keywords)
+    Keywords = set(expectedKeywords.keys())
+
+    selectedKeywords = Keywords.intersection(s)
+    score = 0
+    for key in selectedKeywords:
+        score += expectedKeywords[key]
+
+    return score
