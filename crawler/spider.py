@@ -48,6 +48,7 @@ def parse_douban_group(text: str, min_time: datetime.datetime, check_func) -> (s
             obj.time = datetime.datetime.strptime(timestr, "%m-%d %H:%M").replace(year=2017)
 
             check_func(obj)
+            toppics.append(obj)
             all_count += 1
 
             if obj.time < min_time:
@@ -140,7 +141,7 @@ class DoubanGroupSpider(threading.Thread):
                 elif m > min_time:
                     min_time = m
 
-                    obj.group_name = self.group.name
+                obj.group_name = self.group.name
 
             next_link, toppics = parse_douban_group(page_text, self.min_time, check_func)
 

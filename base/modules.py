@@ -30,7 +30,7 @@ class Toppic:
         self.group_name = None
         self.link = None
         self.title = None
-        self.score = 0
+        self.score = None
         self.time = None
 
     def __repr__(self):
