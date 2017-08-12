@@ -170,7 +170,7 @@ def filter_toppics(tps: [Toppic], config: ConfigFile, recale_score=False) -> [To
     tps = sorted(tps, key=lambda tp: tp.time, reverse=True)
 
     all_toppics_id = set()
-    all_toppic_titles = set()
+    all_toppic_titles = set() #仅靠标题没法准确识别是否是在不同小组下发的同一内容的贴子
     all_toppics = []
 
     for tp in tps:
