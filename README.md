@@ -66,6 +66,15 @@
 
     ```
     
+# 运行
+
+```
+pip3 install -r requirements.txt
+python3 service/spider.py &
+python3 service/web.py &
+
+```
+
 
 # TODO
 * [ ] 验证发贴人的可靠性
