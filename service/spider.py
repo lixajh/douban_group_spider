@@ -36,12 +36,16 @@ class SpiderService(Service):
                 continue
 
             next_time = current_time + self.interval
-
             threads = [DoubanGroupSpider(self.config, group) for group in self.groups]
             for thread in threads:
                 thread.start()
-                thread.join()
 
+                if not self.config.getbool("concurrent"):
+                    thread.join()
+
+            if self.config.getbool("concurrent"):
+                for thread in threads:
+                    thread.join()
 
 
 if __name__ == "__main__":

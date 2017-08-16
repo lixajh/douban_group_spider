@@ -9,6 +9,10 @@ class ConfigFile:
     def get(self, itemKey, section='DEFAULT'):
         return self[section][itemKey]
 
+    def getbool(self, itemKey, section='DEFAULT'):
+        return self.config.getboolean(section, itemKey)
+
+
     def __getattr__(self, item):
         return self.config[item]
 
