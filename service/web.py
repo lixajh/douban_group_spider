@@ -34,7 +34,7 @@ class MyWebService(WebService):
         for file in init_files:
             self._data_file_update(FileSystemEvent(os.path.join(self.data_dir, file)))
 
-        self.router.add_route('GET', '/', self.index)
+        self.router.add_route('GET', '/', self.toppics)
         self.router.add_route('GET', '/zufang/all', self.toppics)
 
     def _data_file_update(self, event):
