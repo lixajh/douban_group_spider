@@ -130,7 +130,7 @@ class DoubanGroupSpider(threading.Thread):
                 page_text = str(browser.get_current_page())
             except requests.exceptions.ConnectionError as ex:
                 logging.error("Get %s fail: %s", next_link, ex)
-                time.sleep(10)
+                time.sleep(3)
                 continue
 
             def check_func(obj: Toppic):
