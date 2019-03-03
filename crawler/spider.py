@@ -210,5 +210,5 @@ def calulate_score(title: str, expectedKeywords):
 
     for key in selectedKeywords:
         score += expectedKeywords[key]
-    logging.info(title + ":" + str(score))
+    # logging.info(title + ":" + str(score))
     return score
