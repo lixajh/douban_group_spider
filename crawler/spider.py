@@ -199,16 +199,20 @@ def calulate_score(title: str, expectedKeywords):
 
     for num in nums:
         intnum = int(num)
-        logging.info(title + ":"+ num)
+        # logging.info(title + ":"+ num)
         if (intnum > 2000 and intnum < 8000):
             score = -1000
-    keywords = list((jieba.cut_for_search(title)))
-    s = set(keywords)
+    # keywords = list((jieba.cut_for_search(title)))
+    # s = set(keywords)
     Keywords = set(expectedKeywords.keys())
-
-    selectedKeywords = Keywords.intersection(s)
-
-    for key in selectedKeywords:
-        score += expectedKeywords[key]
+    for key in Keywords:
+        if(key in title):
+            score += expectedKeywords[key]
+##
+    # selectedKeywords = Keywords.intersection(s)
+    #
+    # for key in selectedKeywords:
+    #     score += expectedKeywords[key]
+ ##
     # logging.info(title + ":" + str(score))
     return score
