@@ -1,10 +1,11 @@
+# -*- coding:utf-8 -*-
 import configparser
 
 
 class ConfigFile:
     def __init__(self, path):
         self.config = configparser.ConfigParser()
-        self.config.read(path)
+        self.config.read(path,encoding="utf-8-sig")
 
     def get(self, itemKey, section='DEFAULT'):
         return self[section][itemKey]

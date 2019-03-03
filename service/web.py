@@ -56,7 +56,7 @@ class MyWebService(WebService):
         return web.Response(body=b'Hello, home page!')
 
     async def toppics(self, request):
-        template_html = open(os.path.join(os.path.dirname(__file__), 'toppic_list.html')).read()
+        template_html = open(os.path.join(os.path.dirname(__file__), 'toppic_list.html'), encoding="utf-8").read()
         item_html = '''
         <li>
 					<div class="list">
@@ -81,6 +81,6 @@ class MyWebService(WebService):
 
 
 if __name__ == "__main__":
-    init_logging("INFO")
+    init_logging("DEBUG")
     s = MyWebService()
     s.run()

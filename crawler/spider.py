@@ -10,6 +10,7 @@ import jieba
 import mechanicalsoup
 import requests
 from bs4 import BeautifulSoup
+import re
 
 from base.configparse import ConfigFile
 from base.modules import DoubanGroup, Toppic
@@ -45,7 +46,7 @@ def parse_douban_group(text: str, min_time: datetime.datetime, check_func) -> (s
             obj.title = a.attrs['title']
 
             timestr = tr.select_one('td.time').text
-            obj.time = datetime.datetime.strptime(timestr, "%m-%d %H:%M").replace(year=2017)
+            obj.time = datetime.datetime.strptime(timestr, "%m-%d %H:%M").replace(year=2019)
 
             check_func(obj)
             toppics.append(obj)
@@ -193,6 +194,11 @@ def filter_toppics(tps: [Toppic], config: ConfigFile, recale_score=False) -> [To
 
 
 def calulate_score(title: str, expectedKeywords):
+    nums = re.findall(r'\d+', title)
+    for num in nums:
+        # logging.error(title + ":"+ num)
+        if (num > 2000 and num < 8000):
+            return -1000
     keywords = list((jieba.cut_for_search(title)))
     s = set(keywords)
     Keywords = set(expectedKeywords.keys())
