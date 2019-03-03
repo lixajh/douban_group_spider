@@ -194,18 +194,21 @@ def filter_toppics(tps: [Toppic], config: ConfigFile, recale_score=False) -> [To
 
 
 def calulate_score(title: str, expectedKeywords):
+    score = 0
     nums = re.findall(r'\d+', title)
+
     for num in nums:
-        # logging.error(title + ":"+ num)
-        if (num > 2000 and num < 8000):
-            return -1000
+        intnum = int(num)
+        logging.info(title + ":"+ num)
+        if (intnum > 2000 and intnum < 8000):
+            score = -1000
     keywords = list((jieba.cut_for_search(title)))
     s = set(keywords)
     Keywords = set(expectedKeywords.keys())
 
     selectedKeywords = Keywords.intersection(s)
-    score = 0
+
     for key in selectedKeywords:
         score += expectedKeywords[key]
-
+    logging.info(title + ":" + str(score))
     return score
